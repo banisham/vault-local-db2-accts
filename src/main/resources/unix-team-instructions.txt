@@ -1,0 +1,49 @@
+# Logon using "root" and perform below commands
+
+sudo adduser hcvpwdmanid
+sudo adduser appuser1
+
+
+#Add the following line at the end of the file to grant "hcvpwdmanid" the permission to run passwd without a password prompt:
+
+sudo visudo
+
+hcvpwdmanid    ALL=(ALL) NOPASSWD: /usr/bin/passwd [A-Za-z0-9_-]*, !/usr/bin/passwd root
+
+
+#Configure SSH to allow password authentication globally while only allowing SSH key-based authentication for specific users. Here's how you can achieve this:
+
+# Ensure to put in the Match block below the Subsystem as mentioned below.
+
+sudo nano /etc/ssh/sshd_config
+
+# Subsystem directive (outside of Match blocks)
+Subsystem       sftp    /usr/lib/openssh/sftp-server
+
+# Allow password authentication globally
+PasswordAuthentication yes
+
+# Match block to restrict SSH key-based authentication to specific users
+Match User hcvpwdmanid
+    PasswordAuthentication no
+
+
+# Copy the public key of hcvpwdmanid to /home/hcvpwdmanid/.ssh/authorized_keys
+
+sudo -u hcvpwdmanid -i
+
+mkdir ~/.ssh
+chmod 700 ~/.ssh
+
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+echo "<public-key-of-hcvpwdmanid" >> ~/.ssh/authorized_keys
+
+exit
+
+# Ensure you are as root user.
+
+sudo systemctl restart sshd
+
+sudo systemctl status sshd

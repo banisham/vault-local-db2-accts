@@ -1,0 +1,77 @@
+#!/usr/bin/expect -f
+
+# Check if the new password argument is provided
+if {[llength $argv] != 4} {
+    puts "Usage: $argv0 <target_server> <priv_ssh_key> <target_account> <new_password>"
+    exit 1
+}
+
+set target_server [lindex $argv 0]
+set priv_ssh_key [lindex $argv 1]
+set target_account [lindex $argv 2]
+set new_passwd [lindex $argv 3]
+
+# Set variables
+set priv_username "hcvpwdmanid"
+
+send "target_server: $target_server\n"
+send "target_account: $target_account\n"
+send "new_passwd: $new_passwd\n"
+send "priv_username: $priv_username\n"
+send "priv_ssh_key: $priv_ssh_key\n"
+
+# Load the private key into SSH agent
+spawn ssh-add <(echo "$priv_ssh_key")
+expect {
+    "Enter passphrase" {
+        send "your_passphrase\r"
+        exp_continue
+    }
+    eof
+}
+
+# Command to establish SSH session
+set ssh_command "ssh -p $priv_username@$target_server"
+
+# Print SSH command for debugging
+puts "Executing SSH command: $ssh_command"
+
+# Login to EC2 instance as hcvpwdmanid
+spawn $ssh_command
+send "sudo passwd $target_account\r"
+expect "New password:"
+send "$new_passwd\r"
+expect "Retype new password:"
+send "$new_passwd\r"
+expect eof
+
+# Verify the password change by logging in as <target_account>
+spawn ssh $target_account@$target_server
+expect {
+    "password:" {
+        send "$new_passwd\r"
+        expect {
+            "Permission denied" {
+                puts "Password change successful. Verification failed."
+                exit 1
+            }
+            "Last login" {
+                puts "Password change and verification successful."
+                exit 0
+            }
+        }
+    }
+    "Last login" {
+        puts "Password change and verification successful."
+        exit 0
+    }
+    timeout {
+        puts "Timeout occurred. Verification failed."
+        exit 1
+    }
+    eof {
+        puts "Error: Connection closed unexpectedly."
+        exit 1
+    }
+}
+
