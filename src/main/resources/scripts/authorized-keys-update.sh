@@ -33,7 +33,7 @@ COMMENT
 response='{
     "host": "'"$hostname"'",
     "account": "'"$account"'",
-    "old-comment": "version-1@hcvpwdmanid",
+    "old-comment": "version-1@hcvpwdmanid@ec2-3-83-127-193.compute-1.amazonaws.com",
     "publicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCAulF437xm1/OMg5rdwd4D44nuh/F4CJSn71BQoRZNSgxyvfctyTwMVDpxoqT1D55fjLJCp4dOJI2Wll+L00zQ+vRsCvwpI6guqrBLKPQbIKQ7IxWq+MZaI6zajSw7u6EPuzOQTs+1W7zw7sgP069HpMbltiQk18B9DOdpLm4oLw== version-2@hcvpwdmanid@ec2-3-83-127-193.compute-1.amazonaws.com"
 }'
 

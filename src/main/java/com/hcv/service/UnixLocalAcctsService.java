@@ -170,7 +170,7 @@ public class UnixLocalAcctsService {
 
 
     /**
-     * This method is for only for testing and will not be used for actaul runtime  testing as the public key
+     * This method is for only for testing and will not be used for actual runtime  testing as the public key
      * will be read from HCV KV path as string.
      * @param sshPublicKeyRequest
      * @return
