@@ -33,8 +33,8 @@ COMMENT
 response='{
     "host": "'"$hostname"'",
     "account": "'"$account"'",
-    "old-comment": "version-1@hcvpwdmanid@ec2-54-221-77-117.compute-1.amazonaws.com",
-    "publicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCp2b/TZNyVOFQBrVoX5uK8ymBPIaj5utS37ZhrrpcNkEtMdx72E6UEUBQSURXw0i6g03MVpbJhPZ/qjPtvMyBBO1Fvg3KaJiFQx62qeqdsNfgjaMIJqw+AJ1XUisrWSfxEjprqBZZOk+gDKMLm+OvYFxLaE7veroKxJ71OJrK3Fw== version-1@hcvpwdmanid@ec2-54-221-77-117.compute-1.amazonaws.com"
+    "old-comment": "version-1@hcvpwdmanid@ec2-3-83-127-193.compute-1.amazonaws.com",
+    "publicKey": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQCAulF437xm1/OMg5rdwd4D44nuh/F4CJSn71BQoRZNSgxyvfctyTwMVDpxoqT1D55fjLJCp4dOJI2Wll+L00zQ+vRsCvwpI6guqrBLKPQbIKQ7IxWq+MZaI6zajSw7u6EPuzOQTs+1W7zw7sgP069HpMbltiQk18B9DOdpLm4oLw== version-2@hcvpwdmanid@ec2-3-83-127-193.compute-1.amazonaws.com"
 }'
 
 # Check if the response is empty
@@ -62,8 +62,8 @@ if [ -z "$old_comment" ]; then
     exit 1
 fi
 
-# echo "Public key: $public_key"
-# echo "Old comment: $old_comment"
+echo "Public key: $public_key"
+echo "Old comment: $old_comment"
 
 # Create a temporary file to store the updated authorized_keys
 temp_file=$(mktemp)
@@ -71,14 +71,14 @@ temp_file=$(mktemp)
 # Remove the old public key entry from the authorized_keys file
 grep -v "$old_comment" "$authorized_keys" > "$temp_file"
 
-# echo "Printing the content of $temp_file : "
-# cat "$temp_file"
+echo "Printing the content of $temp_file : "
+cat "$temp_file"
 
 # Append the fetched public key to the authorized_keys file
 echo "$public_key" >> "$temp_file"
 
-# echo "Printing the content of $temp_file : "
-# cat "$temp_file"
+echo "Printing the content of $temp_file : "
+cat "$temp_file"
 
 # Backup the original authorized_keys file
 cp "$authorized_keys" "$authorized_keys_bak" || { echo "Error: Failed to create backup of authorized_keys."; exit 1; }

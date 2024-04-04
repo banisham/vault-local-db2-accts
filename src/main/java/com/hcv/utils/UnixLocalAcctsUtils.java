@@ -9,10 +9,13 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.*;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 public class UnixLocalAcctsUtils {
     private static final Logger logger = LoggerFactory.getLogger(UnixLocalAcctsUtils.class);
@@ -121,38 +124,40 @@ public class UnixLocalAcctsUtils {
         }
     }
 
-    public static String writePrivateKeyToTempFile(String privateKey) {
+    public static String writePrivateKeyToTempFile(String privateKey, String filePath) {
         FileWriter fileWriter = null;
+        boolean result = false;
         try {
-            // Create a temporary file in the /tmp directory
-            File tempFile = File.createTempFile("private_key", null, new File("/tmp"));
+            logger.info("File path: {}", filePath);
+            logger.info("privateSSHKey: \n" + privateKey);
 
-            // Set the file permissions to 600
-            tempFile.setReadable(false, false);
-            tempFile.setReadable(true, true);
-            tempFile.setWritable(false, false);
-            tempFile.setWritable(true, true);
-            tempFile.setExecutable(false, false);
-            tempFile.setExecutable(false, true);
+            // Convert the private key string to bytes
+            byte[] privateKeyBytes = privateKey.getBytes();
 
-            // Write the private key string to the temporary file
-            fileWriter = new FileWriter(tempFile);
-            fileWriter.write(privateKey);
+            // Create a Path object from the file path
+            Path path = Paths.get(filePath);
 
-            return tempFile.getAbsolutePath();
+            // Write the bytes to the file, overwriting existing content
+            Files.write(path, privateKeyBytes);
+
+            // Set file permissions to 600
+            Set<PosixFilePermission> perms = new HashSet<>();
+            perms.add(PosixFilePermission.OWNER_READ);
+            perms.add(PosixFilePermission.OWNER_WRITE);
+            Files.setPosixFilePermissions(path, perms);
+            logger.info("Private key successfully written to file: {}", path.toAbsolutePath().toString());
+
+            // Return the absolute path of the file as a string
+            return path.toAbsolutePath().toString();
+
+
         } catch (IOException e) {
+            logger.error("Error writing private key to file: {}. {}", filePath, e.getMessage());
+
             e.printStackTrace();
             return null;
-        } finally {
-            // Close the file writer
-            if (fileWriter != null) {
-                try {
-                    fileWriter.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
+
     }
 
 
@@ -173,13 +178,47 @@ public class UnixLocalAcctsUtils {
 
     public static boolean deleteFile(String tempFilePath) {
         File tempFile = new File(tempFilePath);
+        boolean fileDeleted = false;
         if (tempFile.exists()) {
-            logger.info("File deleted succesfully : {}", tempFilePath);
-            return tempFile.delete();
+            fileDeleted = tempFile.delete();
+            if(fileDeleted){
+                logger.info("File deleted succesfully : {}", tempFilePath);
+            }
         } else {
             logger.error("File to delete does not exist : {}", tempFilePath);
-            return false;
         }
+        return fileDeleted;
+    }
+
+
+    public static String readScriptFromJar(String filePath) {
+        String scriptPath = null;
+        try{
+            String jarFilePath = UnixLocalAcctsUtils.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            JarFile jarFile = new JarFile(jarFilePath);
+            ZipEntry entry = jarFile.getEntry(filePath);
+            if (entry != null) {
+                // Load the script file from the JAR as an InputStream
+                InputStream scriptStream = jarFile.getInputStream(entry);
+                // Create a temporary file
+                File tempFile = File.createTempFile("passwd-change", ".sh");
+                // Write the contents of the InputStream to the temporary file
+                Files.copy(scriptStream, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                // Set file permissions to make the temporary file executable
+                tempFile.setExecutable(true);
+                // Get the absolute path of the temporary file
+                scriptPath = tempFile.getAbsolutePath();
+            }else{
+                logger.error("File not found inside Jar file : {}", filePath);
+            }
+           // Print the script path for verification
+            logger.info("Script path: {} ", scriptPath);
+
+        }catch (IOException e) {
+            logger.error("Error executing script: {}", e.getMessage());
+        }
+        return scriptPath;
+
     }
 
 }

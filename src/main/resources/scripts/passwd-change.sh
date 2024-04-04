@@ -1,65 +1,80 @@
-#!/usr/bin/expect -f
+#!/bin/bash
 
-# Check if the new password argument is provided
-if {[llength $argv] != 4} {
-    puts "Usage: $argv0 <target_server> <priv_ssh_key> <target_account> <new_password>"
+# Function to display usage message
+usage() {
+    echo "Usage: $0 <target_server> <priv_ssh_key> <target_account> <new_password>"
+}
+
+# Check if the required arguments are provided
+if [ "$#" -ne 4 ]; then
+    usage
     exit 1
+fi
+
+# Assign input arguments to variables
+target_server="$1"
+priv_ssh_key="$2"
+target_account="$3"
+new_password="$4"
+priv_user="hcvpwdmanid"
+
+# SSH command to log in to the remote server and change password
+ssh_command="ssh -i $priv_ssh_key $priv_user@${target_server}"
+ssh_verfcn_command="ssh -i $priv_ssh_key $target_account@$target_server"
+
+
+
+# Function to execute SSH command and handle errors
+execute_ssh_command() {
+    echo "ssh_command : $ssh_command"
+    # Execute SSH command
+    ssh_output=$($ssh_command "$@" 2>&1)
+
+    # Check if SSH command was successful
+    if [ $? -eq 0 ]; then
+        echo "$ssh_output"
+    else
+        echo "Error executing SSH command: $ssh_output"
+        exit 1
+    fi
 }
 
-set target_server [lindex $argv 0]
-set priv_ssh_key [lindex $argv 1]
-set target_account [lindex $argv 2]
-set new_passwd [lindex $argv 3]
+# Function to execute SSH command for password change
+execute_ssh_passwd_verification() {
+    echo "ssh_verfcn_command : $ssh_verfcn_command"
 
-# Set variables
-set priv_username "hcvpwdmanid"
+   # Execute SSH command
+    ssh_output=$(echo "$new_password" | "$ssh_verfcn_command" "exit" 2>&1)
 
-send "target_server: $target_server\n"
-send "target_account: $target_account\n"
-send "new_passwd: $new_passwd\n"
-send "priv_username: $priv_username\n"
-send "priv_ssh_key: $priv_ssh_key\n"
-
-
-# Login to EC2 instance as hcvpwdmanid
-spawn ssh -i $priv_ssh_key $priv_username@$target_server
-send "sudo passwd $target_account\r"
-expect "New password:"
-send "$new_passwd\r"
-expect "Retype new password:"
-send "$new_passwd\r"
-expect eof
-
-
-# Verify the password change by logging in as <target_account>
-spawn ssh $target_account@$target_server
-expect {
-    "password:" {
-        send "$new_passwd\r"
-        expect {
-            "Permission denied" {
-                puts "Password change successful. Verification failed."
-                exit 1
-            }
-            "Last login" {
-                puts "Password change and verification successful."
-                exit 0
-            }
-        }
-    }
-    "Last login" {
-        puts "Password change and verification successful."
-        exit 0
-    }
-    timeout {
-        puts "Timeout occurred. Verification failed."
+    # Check if SSH command was successful
+    if [ $? -eq 0 ]; then
+        echo "Password change verification successful."
+        echo "$ssh_output"
+    else
+        echo "Error executing passwd change verification command: $ssh_output"
         exit 1
-    }
-    eof {
-        puts "Error: Connection closed unexpectedly."
-        exit 1
-    }
+    fi
 }
 
-# Clean up temporary file (if created)
-exec rm -f $temp_keyfile
+# Function to change password using SSH
+change_password() {
+    # Execute SSH command to change password
+    execute_ssh_command "sudo passwd $target_account" << EOF
+$new_password
+$new_password
+EOF
+}
+
+
+# Main function to execute password change
+main() {
+    # Change password
+    change_password
+    echo "Password for $target_account changed successfully on $target_server."
+#   execute_ssh_passwd_verification
+#   echo "Password change verification for $target_account successful on $target_server."
+
+}
+
+# Invoke main function
+main

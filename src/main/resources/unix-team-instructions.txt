@@ -20,6 +20,7 @@ sudo nano /etc/ssh/sshd_config
 # Subsystem directive (outside of Match blocks)
 Subsystem       sftp    /usr/lib/openssh/sftp-server
 
+
 # Allow password authentication globally
 PasswordAuthentication yes
 
@@ -38,7 +39,7 @@ chmod 700 ~/.ssh
 touch ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 
-echo "<public-key-of-hcvpwdmanid" >> ~/.ssh/authorized_keys
+echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDJViiN98yo6G+U/ixBqd+pCRBPMeEItHAN/e3aXaQeEf9QipNcDvffmOva6V05gPhvMuWJJ1hsD7r4NCaXH5B8P4azxWBbF4g1IA5hc9UQoLkFKMeSTfWsPhbR1XayKsj73Xr40Nd0CpCmJ0lo7JR7HuvSwCrN1zkfunMORrgRcQ7bcgf4FW5E1sr+183CFTGaU+AYKEnmTqpW4H1btMDBB0ZQKJxTWQkqulwFz8YPpcYXKp9ICYuub/NnSUscrLC0QPUi90Rw94qgBMb3cgdgVHaqil0m0dZ/W8XxUdgmVG90AKRiH/IS6WrkZM2DYUIH0i0VcxcrFa9bCRlKMRU3 hcvpwdmanid@example.com" >> ~/.ssh/authorized_keys
 
 exit
 

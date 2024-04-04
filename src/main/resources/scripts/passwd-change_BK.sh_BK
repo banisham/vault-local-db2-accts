@@ -20,30 +20,16 @@ send "new_passwd: $new_passwd\n"
 send "priv_username: $priv_username\n"
 send "priv_ssh_key: $priv_ssh_key\n"
 
-# Load the private key into SSH agent
-spawn ssh-add <(echo "$priv_ssh_key")
-expect {
-    "Enter passphrase" {
-        send "your_passphrase\r"
-        exp_continue
-    }
-    eof
-}
-
-# Command to establish SSH session
-set ssh_command "ssh -p $priv_username@$target_server"
-
-# Print SSH command for debugging
-puts "Executing SSH command: $ssh_command"
 
 # Login to EC2 instance as hcvpwdmanid
-spawn $ssh_command
+spawn ssh -i $priv_ssh_key $priv_username@$target_server
 send "sudo passwd $target_account\r"
 expect "New password:"
 send "$new_passwd\r"
 expect "Retype new password:"
 send "$new_passwd\r"
 expect eof
+
 
 # Verify the password change by logging in as <target_account>
 spawn ssh $target_account@$target_server
@@ -75,3 +61,5 @@ expect {
     }
 }
 
+# Clean up temporary file (if created)
+exec rm -f $temp_keyfile

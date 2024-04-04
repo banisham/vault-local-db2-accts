@@ -16,6 +16,7 @@ import java.util.Map;
 public class UnixLocalAcctsService {
 
     private static final Logger logger = LoggerFactory.getLogger(UnixLocalAcctsService.class);
+/*
 
     public String rotateUnixAcctPassword(String targetServer, String targetAccount, String newPasswd) {
         String outputMessage;
@@ -23,11 +24,13 @@ public class UnixLocalAcctsService {
             String scriptPath = UnixLocalAcctsUtils.getAbsolutePath("scripts/passwd-change.sh");
             boolean fileExist = UnixLocalAcctsUtils.checkFileExists(scriptPath);
 
-            /**
+            */
+/**
              * This below needs to be replaced with reading from HCV KV path - the private key of hcvpwdmanid
              * {kv-path}/unix/{host-name}/hcvpwdmanid/private-key
-              */
-            String privateSSHKey = UnixLocalAcctsUtils.readPrivateKeyAsString("/Users/bans/Documents/Learning/Labs/AWS/ec2-ssh-keys/id_rsa_version-2");
+              *//*
+
+            String privateSSHKey = UnixLocalAcctsUtils.readPrivateKeyAsString("/Users/bans/Documents/Learning/Labs/AWS/ec2-ssh-keys/id_rsa_version-1");
 
             String tempPrivateKeyPath = UnixLocalAcctsUtils.writePrivateKeyToTempFile(privateSSHKey);
 
@@ -42,10 +45,11 @@ public class UnixLocalAcctsService {
             long endTime1 = System.currentTimeMillis();
             logger.info("Time taken for executing process: {} seconds", (endTime1-startTime)/1000);
 
-            /**
+            */
+/**
              * Read the outut of the process. Only use for debugging. Comment out by default
-             */
-/*
+             *//*
+
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             StringBuilder output = new StringBuilder();
@@ -56,19 +60,26 @@ public class UnixLocalAcctsService {
 
             long endTime2 = System.currentTimeMillis();
             logger.info("Time taken for reading process output: {} seconds", (endTime2-startTime)/1000);
-*/
 
             // Wait for the process to complete and get exit code
             int exitCode = process.waitFor();
 
             // Check if the process exited successfully
             if (exitCode == 0) {
-/*              outputMessage = "Password change successful.\n" + output.toString();*/
+              outputMessage = "Password change successful.\n" + output.toString();
+*/
+/*
               outputMessage =  "Password change successful with exit code: " + exitCode;
+*//*
+
                 logger.debug(outputMessage);
             } else {
-              /*outputMessage =  "Password change failed with exit code: " + exitCode + "\n" + output.toString();*/
+              outputMessage =  "Password change failed with exit code: " + exitCode + "\n" + output.toString();
+*/
+/*
                 outputMessage =  "Password change failed with exit code: " + exitCode;
+*//*
+
                 logger.debug(outputMessage);
             }
             boolean tempFileDeletion = UnixLocalAcctsUtils.deleteFile(tempPrivateKeyPath);
@@ -78,6 +89,70 @@ public class UnixLocalAcctsService {
         } catch (IOException | InterruptedException e) {
             logger.error("Error executing password change script: {}" + e.getMessage());
             return "Error executing password change script: " + e.getMessage();
+        }
+        return outputMessage;
+    }
+*/
+
+
+    public String rotateUnixAcctPassword(String targetServer, String targetAccount, String newPasswd) {
+        String outputMessage;
+        try {
+            // Construct command to execute the shell script
+             String scriptPath = UnixLocalAcctsUtils.readScriptFromJar("scripts/passwd-change.sh");
+     //        String scriptPath = UnixLocalAcctsUtils.getAbsolutePath("scripts/passwd-change.sh");
+
+            String privateSSHKey = UnixLocalAcctsUtils.readPrivateKeyAsString("/Users/bans/Documents/Learning/Labs/AWS/ec2-ssh-keys/id_rsa_version-1");
+            String tempPrivateKeyPath = UnixLocalAcctsUtils.writePrivateKeyToTempFile(privateSSHKey, "/tmp/id_rsa");
+            logger.debug("Starting ProcessBuilder: {}, {}, {}, {}, {}", scriptPath, targetServer, tempPrivateKeyPath, targetAccount, newPasswd);
+
+            ProcessBuilder processBuilder = new ProcessBuilder("/bin/bash", scriptPath, targetServer, tempPrivateKeyPath, targetAccount, newPasswd);
+
+            // Start the process
+            Process process = processBuilder.start();
+
+            // Read the output of the process
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+            StringBuilder output = new StringBuilder();
+            StringBuilder errorOutput = new StringBuilder();
+
+            String line;
+
+            // Read standard output
+            while ((line = reader.readLine()) != null) {
+                output.append(line).append("\n");
+            }
+
+            // Read standard error
+            while ((line = errorReader.readLine()) != null) {
+                errorOutput.append(line).append("\n");
+            }
+
+            // Wait for the process to complete and get exit code
+            int exitCode = process.waitFor();
+
+            logger.info("Process output: {}", exitCode);
+            logger.debug("Process outputMessage: {}", output.toString());
+            logger.debug("Error outputMessage: {}", errorOutput.toString());
+
+
+            // Check if the process exited successfully
+            if (exitCode == 0) {
+                outputMessage = "Password change successful with exit code: " + exitCode;
+            } else {
+                outputMessage = "Password change failed with exit code: " + exitCode ;
+            }
+
+            // Delete temporary private key file
+            boolean tempFileDeletion = UnixLocalAcctsUtils.deleteFile(tempPrivateKeyPath);
+            // Delete temporary script file extracted from jar
+            boolean tempScriptFileDeletion = UnixLocalAcctsUtils.deleteFile(scriptPath);
+
+        } catch (IOException | InterruptedException e) {
+            outputMessage = "Error executing password change script: " + e.getMessage();
+            e.printStackTrace();
         }
         return outputMessage;
     }
