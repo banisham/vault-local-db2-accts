@@ -17,8 +17,8 @@ import java.util.*;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
-public class UnixLocalAcctsUtils {
-    private static final Logger logger = LoggerFactory.getLogger(UnixLocalAcctsUtils.class);
+public class UnixAcctsUtils {
+    private static final Logger logger = LoggerFactory.getLogger(UnixAcctsUtils.class);
 
     public static Map<String, String> generateSSHKeyPair(String accountName, String hostName, String version) throws Exception{
 
@@ -99,7 +99,7 @@ public class UnixLocalAcctsUtils {
 
     public static String getAbsolutePath(String fileName){
         String scriptAbsolutePath;
-        ClassLoader classLoader = UnixLocalAcctsUtils.class.getClassLoader();
+        ClassLoader classLoader = UnixAcctsUtils.class.getClassLoader();
         URL scriptUrl = classLoader.getResource(fileName);
         if (scriptUrl != null) {
             File scriptFile = new File(scriptUrl.getFile());
@@ -194,7 +194,7 @@ public class UnixLocalAcctsUtils {
     public static String readScriptFromJar(String filePath) {
         String scriptPath = null;
         try{
-            String jarFilePath = UnixLocalAcctsUtils.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            String jarFilePath = UnixAcctsUtils.class.getProtectionDomain().getCodeSource().getLocation().getPath();
             JarFile jarFile = new JarFile(jarFilePath);
             ZipEntry entry = jarFile.getEntry(filePath);
             if (entry != null) {
